@@ -6,4 +6,4 @@ import { ResponseService } from './services/response.service';
   providers: [ResponseService,],
   exports: [ResponseService,],
 })
-export class CommonModule {}
+export class CommonModule {} 
