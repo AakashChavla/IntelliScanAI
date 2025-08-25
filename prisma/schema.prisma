@@ -15,22 +15,22 @@ datasource db {
 
 // User Management
 model User {
-  id            String       @id @default(uuid())
-  email         String       @unique
-  password      String
-  name          String?
-  isVerified    Boolean      @default(false)
-  isApproved    Boolean      @default(false)
-  role          UserRole     @default(DEVELOPER)
-  
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password          String
+  name              String?
+  isVerified        Boolean   @default(false)
+  isApproved        Boolean   @default(false)
+  role              UserRole  @default(DEVELOPER)
+  verificationToken String?   @unique
   // Subscription management
-  planId        String?
-  plan          Plan?        @relation(fields: [planId], references: [id])
-  planStartedAt DateTime?
-  planExpireAt  DateTime?
-  
+  planId            String?
+  plan              Plan?     @relation(fields: [planId], references: [id])
+  planStartedAt     DateTime?
+  planExpireAt      DateTime?
+
   // Session management
-  sessionToken  String?      @unique
+  sessionToken  String?   @unique
   sessionExpire DateTime?
 
   // Relations
@@ -39,9 +39,9 @@ model User {
   notifications Notification[]
 
   // Timestamps
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  deletedAt     DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([email])
   @@index([planId])
@@ -56,18 +56,18 @@ enum UserRole {
 }
 
 model Plan {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  price       Decimal  @db.Money
-  scanLimit   Int      @default(0)
-  userLimit   Int      @default(1)
-  isActive    Boolean  @default(true)
-  
-  users       User[]
+  id        String  @id @default(uuid())
+  name      String  @unique
+  price     Decimal @db.Money
+  scanLimit Int     @default(0)
+  userLimit Int     @default(1)
+  isActive  Boolean @default(true)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
+  users User[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([name])
   @@index([isActive])
@@ -75,46 +75,46 @@ model Plan {
 
 // Main Project/Repository Entity (Combined)
 model Project {
-  id          String      @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
   description String?
-  
+
   // Source information - user can provide either repo URL or upload files
-  sourceType  SourceType
-  repoUrl     String?     // GitHub, GitLab, Bitbucket, etc.
-  branch      String?     @default("main")
-  
+  sourceType SourceType
+  repoUrl    String? // GitHub, GitLab, Bitbucket, etc.
+  branch     String?    @default("main")
+
   // Storage information for uploaded/cloned code
   s3Bucket    String?
-  s3KeyPrefix String?     // Folder prefix in S3 for this project
-  
+  s3KeyPrefix String? // Folder prefix in S3 for this project
+
   // Project metadata
-  language    String?     // Primary language detected
-  framework   String?     // Framework detected (React, Django, etc.)
-  totalFiles  Int?        @default(0)
-  totalLines  Int?        @default(0)
-  
+  language   String? // Primary language detected
+  framework  String? // Framework detected (React, Django, etc.)
+  totalFiles Int?    @default(0)
+  totalLines Int?    @default(0)
+
   // Project status
-  status      ProjectStatus @default(PENDING)
-  statusMessage String?    // Error message if failed
-  
+  status        ProjectStatus @default(PENDING)
+  statusMessage String? // Error message if failed
+
   // Processing timestamps
   uploadedAt  DateTime?
   processedAt DateTime?
   lastScanAt  DateTime?
-  
+
   // Owner relationship
-  ownerId     String
-  owner       User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
   // Relations
-  files       File[]
-  scans       Scan[]
+  files File[]
+  scans Scan[]
 
   // Timestamps
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  deletedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([ownerId])
   @@index([status])
@@ -123,51 +123,51 @@ model Project {
 }
 
 enum SourceType {
-  GITHUB_URL      // User provided GitHub URL
-  GITLAB_URL      // User provided GitLab URL
-  BITBUCKET_URL   // User provided Bitbucket URL
-  FILE_UPLOAD     // User uploaded zip/files directly
-  OTHER_GIT_URL   // Other Git repository URL
+  GITHUB_URL // User provided GitHub URL
+  GITLAB_URL // User provided GitLab URL
+  BITBUCKET_URL // User provided Bitbucket URL
+  FILE_UPLOAD // User uploaded zip/files directly
+  OTHER_GIT_URL // Other Git repository URL
 }
 
 enum ProjectStatus {
-  PENDING         // Just created, not processed yet
-  DOWNLOADING     // Cloning/downloading from URL
-  PROCESSING      // Processing uploaded files
-  READY           // Ready for scanning
-  FAILED          // Failed to process
-  ARCHIVED        // User archived the project
+  PENDING // Just created, not processed yet
+  DOWNLOADING // Cloning/downloading from URL
+  PROCESSING // Processing uploaded files
+  READY // Ready for scanning
+  FAILED // Failed to process
+  ARCHIVED // User archived the project
 }
 
 // File Management (simplified)
 model File {
-  id          String   @id @default(uuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
+  id        String  @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   // File information
-  relativePath String  // Path relative to project root
-  fileName    String
-  extension   String?
-  s3Key       String   @unique // Full S3 key
-  
+  relativePath String // Path relative to project root
+  fileName     String
+  extension    String?
+  s3Key        String  @unique // Full S3 key
+
   // File metadata
-  language    String?
-  size        Int      @default(0)
-  lineCount   Int?     @default(0)
-  checksum    String?  // For file integrity
-  
+  language  String?
+  size      Int     @default(0)
+  lineCount Int?    @default(0)
+  checksum  String? // For file integrity
+
   // Content for analysis (for smaller files)
-  content     String?  @db.Text
-  
+  content String? @db.Text
+
   // Relations
-  chunks      Chunk[]  // For large files, split into chunks
-  findings    Finding[] // Vulnerabilities found in this file
+  chunks   Chunk[] // For large files, split into chunks
+  findings Finding[] // Vulnerabilities found in this file
 
   // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([projectId])
   @@index([language])
@@ -176,20 +176,20 @@ model File {
 
 // Chunks for large files or AI processing
 model Chunk {
-  id          String   @id @default(uuid())
-  fileId      String
-  file        File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
-  
-  chunkIndex  Int      // Order of this chunk in the file
-  content     String   @db.Text
-  startLine   Int
-  endLine     Int
-  
+  id     String @id @default(uuid())
+  fileId String
+  file   File   @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  chunkIndex Int // Order of this chunk in the file
+  content    String @db.Text
+  startLine  Int
+  endLine    Int
+
   // AI embeddings for semantic search
-  embedding   Float[]  // Use Prisma's vector support or store as JSON
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  embedding Float[] // Use Prisma's vector support or store as JSON
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([fileId, chunkIndex])
   @@index([fileId])
@@ -197,56 +197,56 @@ model Chunk {
 
 // Security Scanning
 model Scan {
-  id           String         @id @default(uuid())
-  name         String?        // User-defined scan name
-  
+  id   String  @id @default(uuid())
+  name String? // User-defined scan name
+
   // Project relationship
-  projectId    String
-  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   // Scan execution
-  startedAt    DateTime       @default(now())
-  finishedAt   DateTime?
-  status       ScanStatus     @default(PENDING)
-  progress     Int           @default(0) // 0-100
-  
+  startedAt  DateTime   @default(now())
+  finishedAt DateTime?
+  status     ScanStatus @default(PENDING)
+  progress   Int        @default(0) // 0-100
+
   // Scan configuration
-  scanType     ScanType      @default(FULL)
-  scanDepth    ScanDepth     @default(STANDARD)
-  includeTests Boolean       @default(false) // Include test files
-  
+  scanType     ScanType  @default(FULL)
+  scanDepth    ScanDepth @default(STANDARD)
+  includeTests Boolean   @default(false) // Include test files
+
   // AI Analysis configuration
-  aiModel      String?       // Which AI model used
-  aiProvider   String?       // OpenAI, Anthropic, etc.
-  
+  aiModel    String? // Which AI model used
+  aiProvider String? // OpenAI, Anthropic, etc.
+
   // Results summary
-  totalFindings     Int       @default(0)
-  criticalCount     Int       @default(0)
-  highCount         Int       @default(0)
-  mediumCount       Int       @default(0)
-  lowCount          Int       @default(0)
-  infoCount         Int       @default(0)
-  
+  totalFindings Int @default(0)
+  criticalCount Int @default(0)
+  highCount     Int @default(0)
+  mediumCount   Int @default(0)
+  lowCount      Int @default(0)
+  infoCount     Int @default(0)
+
   // Performance metrics
-  filesScanned      Int       @default(0)
-  linesScanned      Int       @default(0)
-  processingTime    Int?      // Seconds
-  
+  filesScanned   Int  @default(0)
+  linesScanned   Int  @default(0)
+  processingTime Int? // Seconds
+
   // Error handling
   errorMessage String?
   errorDetails Json?
 
   // User who triggered the scan
-  userId       String
-  triggeredBy  User          @relation(fields: [userId], references: [id])
+  userId      String
+  triggeredBy User   @relation(fields: [userId], references: [id])
 
   // Relations
-  findings     Finding[]
+  findings      Finding[]
   aiSuggestions AISuggestion[]
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  deletedAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([projectId])
   @@index([userId])
@@ -263,77 +263,77 @@ enum ScanStatus {
 }
 
 enum ScanType {
-  FULL          // Scan entire project
-  INCREMENTAL   // Scan only changed files
-  TARGETED      // Scan specific files/folders
-  QUICK         // Fast scan with basic checks
+  FULL // Scan entire project
+  INCREMENTAL // Scan only changed files
+  TARGETED // Scan specific files/folders
+  QUICK // Fast scan with basic checks
 }
 
 enum ScanDepth {
-  BASIC         // Basic security checks
-  STANDARD      // Standard security analysis
-  DEEP          // Deep analysis with AI
+  BASIC // Basic security checks
+  STANDARD // Standard security analysis
+  DEEP // Deep analysis with AI
   COMPREHENSIVE // Most thorough analysis
 }
 
 // Security Findings (AI-detected vulnerabilities)
 model Finding {
-  id          String            @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // Relationships
-  scanId      String
-  scan        Scan              @relation(fields: [scanId], references: [id], onDelete: Cascade)
-  fileId      String?
-  file        File?             @relation(fields: [fileId], references: [id])
-  
+  scanId String
+  scan   Scan    @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  fileId String?
+  file   File?   @relation(fields: [fileId], references: [id])
+
   // Finding classification
-  severity    Severity
-  type        VulnerabilityType
-  category    String?           // OWASP, CWE category
-  
+  severity Severity
+  type     VulnerabilityType
+  category String? // OWASP, CWE category
+
   // Finding details
   title       String
-  description String            @db.Text
-  impact      String?           @db.Text // What could happen
-  
+  description String  @db.Text
+  impact      String? @db.Text // What could happen
+
   // Location information
-  filePath    String?           // Relative path in project
+  filePath    String? // Relative path in project
   startLine   Int?
   endLine     Int?
   columnStart Int?
   columnEnd   Int?
-  
+
   // Code context
-  codeSnippet String?           @db.Text // The vulnerable code
-  context     String?           @db.Text // Surrounding code for context
-  
+  codeSnippet String? @db.Text // The vulnerable code
+  context     String? @db.Text // Surrounding code for context
+
   // AI Analysis
-  aiConfidence  Int             @default(100) // 0-100 AI confidence
-  aiReasoning   String?         @db.Text // Why AI thinks this is vulnerable
-  aiModel       String?         // Which AI model detected this
-  
+  aiConfidence Int     @default(100) // 0-100 AI confidence
+  aiReasoning  String? @db.Text // Why AI thinks this is vulnerable
+  aiModel      String? // Which AI model detected this
+
   // Compliance and standards
-  cweId       String?           // CWE identifier
-  owaspTop10  String?           // OWASP Top 10 category
-  severity_score Float?         // CVSS score if applicable
-  
+  cweId          String? // CWE identifier
+  owaspTop10     String? // OWASP Top 10 category
+  severity_score Float? // CVSS score if applicable
+
   // Status and resolution
-  status      FindingStatus     @default(OPEN)
-  resolution  String?           @db.Text
-  resolvedAt  DateTime?
-  falsePositive Boolean         @default(false)
-  
+  status        FindingStatus @default(OPEN)
+  resolution    String?       @db.Text
+  resolvedAt    DateTime?
+  falsePositive Boolean       @default(false)
+
   // User interaction
-  acknowledged Boolean          @default(false)
+  acknowledged   Boolean   @default(false)
   acknowledgedAt DateTime?
-  acknowledgedBy String?        // User ID who acknowledged
-  
+  acknowledgedBy String? // User ID who acknowledged
+
   // Relations
   aiSuggestions AISuggestion[]
 
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  deletedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([scanId])
   @@index([fileId])
@@ -368,37 +368,37 @@ enum VulnerabilityType {
   COMMAND_INJECTION
   LDAP_INJECTION
   XPATH_INJECTION
-  
+
   // Cross-site scripting
   XSS_REFLECTED
   XSS_STORED
   XSS_DOM
-  
+
   // Authentication & Authorization
   BROKEN_AUTHENTICATION
   BROKEN_ACCESS_CONTROL
   INSECURE_DIRECT_OBJECT_REFERENCES
   CSRF
-  
+
   // Data exposure
   SENSITIVE_DATA_EXPOSURE
   INFORMATION_DISCLOSURE
   HARDCODED_SECRETS
   HARDCODED_CREDENTIALS
-  
+
   // Cryptography
   WEAK_CRYPTOGRAPHY
   INSECURE_RANDOM
   WEAK_HASHING
-  
+
   // Configuration
   SECURITY_MISCONFIGURATION
   INSECURE_DEFAULTS
-  
+
   // Components
   VULNERABLE_COMPONENTS
   OUTDATED_DEPENDENCIES
-  
+
   // Other common issues
   INSECURE_DESERIALIZATION
   PATH_TRAVERSAL
@@ -406,48 +406,48 @@ enum VulnerabilityType {
   RACE_CONDITION
   DENIAL_OF_SERVICE
   INSUFFICIENT_LOGGING
-  
+
   // AI-detected patterns
   SUSPICIOUS_PATTERN
   POTENTIAL_BACKDOOR
   INSECURE_CODING_PRACTICE
-  
+
   CUSTOM // For custom rules
 }
 
 // AI-generated suggestions for fixes
 model AISuggestion {
-  id          String   @id @default(uuid())
-  
-  // Relationships
-  scanId      String
-  scan        Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
-  findingId   String?
-  finding     Finding? @relation(fields: [findingId], references: [id], onDelete: Cascade)
-  
-  // Suggestion content
-  title       String
-  suggestion  String   @db.Text
-  fixCode     String?  @db.Text // Suggested code fix
-  category    AISuggestionType
-  
-  // AI metadata
-  confidence  Int      @default(100)
-  aiModel     String?
-  aiProvider  String?
-  
-  // Implementation tracking
-  helpful     Boolean?
-  implemented Boolean  @default(false)
-  implementedAt DateTime?
-  
-  // Priority and effort
-  priority    SuggestionPriority @default(MEDIUM)
-  effort      SuggestionEffort   @default(MEDIUM)
+  id String @id @default(uuid())
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
+  // Relationships
+  scanId    String
+  scan      Scan     @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  findingId String?
+  finding   Finding? @relation(fields: [findingId], references: [id], onDelete: Cascade)
+
+  // Suggestion content
+  title      String
+  suggestion String           @db.Text
+  fixCode    String?          @db.Text // Suggested code fix
+  category   AISuggestionType
+
+  // AI metadata
+  confidence Int     @default(100)
+  aiModel    String?
+  aiProvider String?
+
+  // Implementation tracking
+  helpful       Boolean?
+  implemented   Boolean   @default(false)
+  implementedAt DateTime?
+
+  // Priority and effort
+  priority SuggestionPriority @default(MEDIUM)
+  effort   SuggestionEffort   @default(MEDIUM)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([scanId])
   @@index([findingId])
@@ -474,41 +474,41 @@ enum SuggestionPriority {
 }
 
 enum SuggestionEffort {
-  TRIVIAL    // < 1 hour
-  EASY       // 1-4 hours
-  MEDIUM     // 1-2 days
-  HARD       // 3-7 days
-  COMPLEX    // > 1 week
+  TRIVIAL // < 1 hour
+  EASY // 1-4 hours
+  MEDIUM // 1-2 days
+  HARD // 3-7 days
+  COMPLEX // > 1 week
 }
 
 // Enhanced Notifications
 model Notification {
-  id        String           @id @default(uuid())
-  
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id String @id @default(uuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Content
-  title     String
-  message   String           @db.Text
-  type      NotificationType
-  priority  NotificationPriority @default(NORMAL)
-  
+  title    String
+  message  String               @db.Text
+  type     NotificationType
+  priority NotificationPriority @default(NORMAL)
+
   // Links to related entities
   projectId String?
   scanId    String?
   findingId String?
-  
+
   // Status
-  read      Boolean          @default(false)
-  readAt    DateTime?
-  
+  read   Boolean   @default(false)
+  readAt DateTime?
+
   // Delivery
-  channels  String[]         // email, push, in-app
-  sentAt    DateTime?
-  
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  channels String[] // email, push, in-app
+  sentAt   DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   @@index([userId])
@@ -542,20 +542,20 @@ enum NotificationPriority {
 
 // Simple audit trail
 model AuditLog {
-  id        String    @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   userId    String?
   userEmail String?
-  
-  action    String    // UPLOAD_PROJECT, START_SCAN, etc.
-  resource  String    // Project, Scan, etc.
+
+  action     String // UPLOAD_PROJECT, START_SCAN, etc.
+  resource   String // Project, Scan, etc.
   resourceId String?
-  
-  details   Json?     // Additional details
+
+  details   Json? // Additional details
   ipAddress String?
   userAgent String?
-  
-  createdAt DateTime  @default(now())
+
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([action])

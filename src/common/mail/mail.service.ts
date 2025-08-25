@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { MailTemplateService, EmailTemplateData } from './mail-template';
 
 interface EmailOptions {
   to: string | string[];
@@ -15,7 +16,7 @@ export class MailService {
   private transporter: nodemailer.Transporter;
   private isMailServiceReady: boolean = false;
 
-  constructor() {
+  constructor(private readonly mailTemplateService: MailTemplateService) {
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: parseInt(process.env.SMTP_PORT || '587'),
@@ -86,5 +87,39 @@ export class MailService {
     }
   }
 
+  async sendTemplatedEmail(
+    options: EmailOptions & { templateData?: EmailTemplateData },
+  ) {
+    try {
+      const htmlContent = options.templateData
+        ? this.mailTemplateService.generateEmailTemplate(options.templateData)
+        : options.html;
 
+      return await this.sendEmail({
+        ...options,
+        html: htmlContent,
+      });
+    } catch (error) {
+      this.logger.error('Templated email sending error:', error);
+      throw new Error('Failed to send templated email');
+    }
+  }
+
+  async sendVerificationEmail(
+    email: string,
+    verificationUrl: string,
+    userName?: string,
+  ) {
+    const html = this.mailTemplateService.generateVerificationEmail(
+      email,
+      verificationUrl,
+      userName,
+    );
+
+    return await this.sendEmail({
+      to: email,
+      subject: 'Verify Your Email - IntelliScanAI',
+      html,
+    });
+  }
 }
