@@ -32,6 +32,7 @@ model User {
   // Session management
   sessionToken  String?   @unique
   sessionExpire DateTime?
+  lastLoginAt   DateTime?
 
   // Relations
   projects      Project[]

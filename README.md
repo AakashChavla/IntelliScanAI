@@ -35,7 +35,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your_email@gmail.com
 SMTP_PASS=your_password
-JWT_SECRET=your_jwt_secret
+JWT_SECRET_KEY=your_jwt_secret
 FRONTEND_URL=http://localhost:3000
 ```
 

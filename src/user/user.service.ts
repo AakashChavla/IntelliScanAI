@@ -6,7 +6,7 @@ import { ResponseService } from 'src/common/services/response.service';
 import { DatabaseService } from 'src/database/database.service';
 import { UserDto } from './dto/user.dto';
 import * as jwt from 'jsonwebtoken';
-const JWT_SECRET = process.env.JWT_SECRET || '';
+const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jaihindjaibharat';
 
 @Injectable()
 export class UserService {
@@ -112,7 +112,7 @@ export class UserService {
 
   async verifyEmail(token: string, res: Response) {
     try {
-      const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+      const JWT_SECRET = process.env.JWT_SECRET_KEY || 'jaihindjaibharat';
       const payload = jwt.verify(token, JWT_SECRET) as { email: string };
 
       const user = await this.databaseService.user.findUnique({

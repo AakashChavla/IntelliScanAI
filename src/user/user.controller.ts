@@ -97,27 +97,10 @@ export class UserController {
     },
   })
   async register(@Body() userDto: UserDto, @Res() res: Response) {
-    try {
-      this.logger.log(
-        `Processing registration request for email: ${userDto.email}`,
-      );
-      const result = await this.userService.registerUser(res, userDto);
-      return result;
-    } catch (error) {
-      this.logger.error(
-        `Registration failed for email: ${userDto.email}`,
-        error.stack,
-      );
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        status: 'error',
-        message: 'Internal Server Error',
-        error: error.message,
-        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      });
-    }
+     await this.userService.registerUser(res, userDto);
   }
 
- @Get('verify-email')
+  @Get('verify-email')
   async verifyEmail(@Query('token') token: string, @Res() res: Response) {
     return this.userService.verifyEmail(token, res);
   }
