@@ -84,10 +84,13 @@ model Project {
   sourceType SourceType
   repoUrl    String? // GitHub, GitLab, Bitbucket, etc.
   branch     String?    @default("main")
+  githubToken String? // For private repos
 
   // Storage information for uploaded/cloned code
   s3Bucket    String?
   s3KeyPrefix String? // Folder prefix in S3 for this project
+  s3ZipKey    String? // S3 key for the uploaded ZIP file
+  presignedUrl String? // Generated presigned URL for direct upload
 
   // Project metadata
   language   String? // Primary language detected
