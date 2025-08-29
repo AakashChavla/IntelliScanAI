@@ -2,6 +2,7 @@ import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
+import { EmbeddingService } from '../common/services/embedding.service';
 import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import * as git from 'simple-git';
 import * as fs from 'fs';
@@ -30,7 +31,10 @@ export class RepositoryProcessor {
   private readonly logger = new Logger(RepositoryProcessor.name);
   private readonly s3Client: S3Client;
 
-  constructor(private readonly databaseService: DatabaseService) {
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly embeddingService: EmbeddingService,
+  ) {
     const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
     const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
     
@@ -331,10 +335,37 @@ export class RepositoryProcessor {
       return;
     }
 
-    // Create chunk records in batches
+    this.logger.debug(`Processing ${chunks.length} chunks for file ${fileId} with embedding generation`);
+
+    // Check if Ollama is available for embeddings
+    const isOllamaAvailable = await this.embeddingService.isOllamaAvailable();
+    
+    if (!isOllamaAvailable) {
+      this.logger.warn('Ollama service not available - chunks will be created without embeddings');
+    }
+
+    // Generate embeddings for chunks (in batches to avoid overwhelming the API)
+    let embeddingResponses: any[] = [];
+    
+    if (isOllamaAvailable) {
+      try {
+        this.logger.debug(`Generating embeddings for ${chunks.length} chunks using Ollama`);
+        embeddingResponses = await this.embeddingService.generateBatchEmbeddings(chunks);
+      } catch (error) {
+        this.logger.error(`Failed to generate embeddings for file ${fileId}: ${error.message}`);
+        // Continue without embeddings rather than failing
+        embeddingResponses = chunks.map(() => ({ embedding: [] }));
+      }
+    } else {
+      // Create empty embeddings if service is not available
+      embeddingResponses = chunks.map(() => ({ embedding: [] }));
+    }
+
+    // Create chunk records with embeddings
     const chunkRecords = chunks.map((chunkContent, index) => {
       const lines = content.substring(0, chunkSize * index).split('\n').length;
       const endLines = content.substring(0, chunkSize * (index + 1)).split('\n').length;
+      const embedding = embeddingResponses[index]?.embedding || [];
       
       return {
         fileId,
@@ -342,25 +373,30 @@ export class RepositoryProcessor {
         content: chunkContent,
         startLine: lines,
         endLine: endLines,
-        embedding: [], // TODO: Add AI embeddings later
+        embedding: embedding,
       };
     });
 
     // Insert chunks in batches to avoid database limits
-    const batchSize = 100;
+    const batchSize = 50; // Reduced batch size due to larger data with embeddings
     for (let i = 0; i < chunkRecords.length; i += batchSize) {
       const batch = chunkRecords.slice(i, i + batchSize);
       try {
         await this.databaseService.chunk.createMany({
           data: batch,
         });
+        
+        const embedCount = batch.filter(record => record.embedding.length > 0).length;
+        this.logger.debug(`Inserted batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(chunkRecords.length/batchSize)} - ${batch.length} chunks (${embedCount} with embeddings)`);
+        
       } catch (error) {
         this.logger.error(`Failed to create chunks for file ${fileId}, batch ${i}-${i + batchSize}: ${error.message}`);
         // Continue with next batch instead of failing completely
       }
     }
 
-    this.logger.debug(`Created ${chunks.length} chunks for file ${fileId}`);
+    const totalEmbeddings = chunkRecords.filter(record => record.embedding.length > 0).length;
+    this.logger.log(`Created ${chunks.length} chunks for file ${fileId} (${totalEmbeddings} with embeddings)`);
   }
 
   private async getAllFiles(dirPath: string): Promise<string[]> {

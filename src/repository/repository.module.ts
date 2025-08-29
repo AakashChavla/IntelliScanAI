@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { RepositoryService } from './repository.service';
 import { RepositoryController } from './repository.controller';
+import { SemanticSearchController } from './semantic-search.controller';
 import { RepositoryProcessor } from './repository.processor';
 import { DatabaseService } from '../database/database.service';
 import { ResponseService } from '../common/services/response.service';
@@ -19,7 +20,7 @@ import { AuthModule } from '../auth/auth.module';
     }),
     AuthModule, // Import AuthModule to access AuthGuard and AuthService
   ],
-  controllers: [RepositoryController],
+  controllers: [RepositoryController, SemanticSearchController],
   providers: [
     RepositoryService,
     RepositoryProcessor,
