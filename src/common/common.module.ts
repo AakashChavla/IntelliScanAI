@@ -3,6 +3,7 @@ import { ResponseService } from './services/response.service';
 import { DatabaseService } from './database/database.service';
 import { MailService } from './mail/mail.service';
 import { MailTemplateService } from './mail/main-template';
+import { AwsService } from './aws/aws.service';
 
 @Global()
 @Module({
@@ -10,13 +11,15 @@ import { MailTemplateService } from './mail/main-template';
     ResponseService,
     DatabaseService,
     MailService,
-    MailTemplateService
+    MailTemplateService,
+    AwsService,
   ],
   exports: [
     ResponseService,
     DatabaseService,
     MailService,
-    MailTemplateService
+    MailTemplateService,
+    AwsService,
   ],
 })
 export class CommonModule { } 
